@@ -3,6 +3,8 @@ FROM eclipse-temurin:21-jdk-alpine AS build
 WORKDIR /app
 COPY mvnw pom.xml ./
 COPY .mvn .mvn
+# Cấp quyền thực thi cho file mvnw
+RUN chmod +x mvnw
 RUN ./mvnw dependency:go-offline -B
 
 COPY src src
