@@ -1,0 +1,93 @@
+name: CI/CD Backend
+
+on:
+  push:
+    branches: [main, "release/**"]
+  pull_request:
+    branches: [main]
+
+env:
+  ECR_REPOSITORY: mdluxury-backend
+  AWS_REGION: ap-southeast-1
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cài đặt JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: maven
+
+      - name: Quét lỗ hổng thư viện
+        run: ./mvnw org.owasp:dependency-check-maven:check
+
+      - name: Chạy unit test và integration test
+        run: ./mvnw test
+
+      - name: Kiểm tra độ phủ test
+        run: ./mvnw jacoco:report
+
+  build-and-push:
+    needs: test
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Xác thực AWS qua OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::123456789012:role/github-actions-deploy
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Đăng nhập Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build và đẩy image Docker
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+  deploy-qas:
+    needs: build-and-push
+    if: startsWith(github.ref, 'refs/heads/release/')
+    runs-on: ubuntu-latest
+    environment: qas
+    steps:
+      - name: Cập nhật ECS service QAS
+        run: |
+          aws ecs update-service \
+            --cluster mdluxury-qas \
+            --service backend-service \
+            --force-new-deployment
+
+  deploy-prod:
+    needs: build-and-push
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Cập nhật ECS service PRD
+        run: |
+          aws ecs update-service \
+            --cluster mdluxury-prod \
+            --service backend-service \
+            --force-new-deployment
+
+      - name: Theo dõi triển khai ổn định
+        run: |
+          aws ecs wait services-stable \
+            --cluster mdluxury-prod \
+            --services backend-service
