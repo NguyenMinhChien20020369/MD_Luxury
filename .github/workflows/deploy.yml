@@ -29,7 +29,7 @@ jobs:
       - name: Tạo Bảng Thống Kê Chi Tiết
         if: always()
         run: |
-          # 1. Tính toán thời gian & số lượng test từ kết quả XML
+          # 1. Đếm tổng số test cases từ các file XML
           TOTAL=$(grep -h "tests=" target/surefire-reports/TEST-*.xml 2>/dev/null | sed -E 's/.*tests="([0-9]+)".*/\1/' | awk '{s+=$1} END {print s+0}')
           FAILURES=$(grep -h "failures=" target/surefire-reports/TEST-*.xml 2>/dev/null | sed -E 's/.*failures="([0-9]+)".*/\1/' | awk '{s+=$1} END {print s+0}')
           ERRORS=$(grep -h "errors=" target/surefire-reports/TEST-*.xml 2>/dev/null | sed -E 's/.*errors="([0-9]+)".*/\1/' | awk '{s+=$1} END {print s+0}')
@@ -37,17 +37,23 @@ jobs:
           
           FAILED_TOTAL=$((FAILURES + ERRORS))
           PASSED=$((TOTAL - FAILED_TOTAL - SKIPPED))
-
-          # Determine status badge & color
-          IF [ $FAILED_TOTAL -eq 0 ]; THEN
+          
+          # Kiểm tra nếu TOTAL = 0 để tránh lỗi chia cho 0
+          IF_MAX=$TOTAL
+          if [ $TOTAL -eq 0 ]; then
+            IF_MAX=1
+          fi
+          
+          # 2. Xử lý logic câu lệnh if (chỉ viết chữ thường: if/then/else/fi)
+          if [ $FAILED_TOTAL -eq 0 ] && [$TOTAL -gt 0 ]; then
             STATUS_BADGE="![Passed](https://img.shields.io/badge/BUILD-SUCCESS-brightgreen?style=for-the-badge&logo=github)"
             RESULT_ICON="🟢 **PASSED**"
-          ELSE
+          else
             STATUS_BADGE="![Failed](https://img.shields.io/badge/BUILD-FAILED-red?style=for-the-badge&logo=github)"
             RESULT_ICON="🔴 **FAILED**"
-          FI
-
-          # 2. Đẩy nội dung Markdown màu sắc vào Summary
+          fi
+          
+          # 3. Xuất bảng Markdown vào GITHUB_STEP_SUMMARY
           echo "# 🚀 BÁO CÁO KẾT QUẢ CI BACKEND 🚀" >> $GITHUB_STEP_SUMMARY
           echo "$STATUS_BADGE" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -58,13 +64,13 @@ jobs:
           echo "| Hạng mục | Chỉ số | Trạng thái / Tiến độ |" >> $GITHUB_STEP_SUMMARY
           echo "| :--- | :---: | :--- |" >> $GITHUB_STEP_SUMMARY
           echo "| 🧪 **Tổng số Test Cases** | **$TOTAL** | 📦 \`Spring Boot Unit & Integration\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| ✅ **Thành công (Passed)** | **$PASSED** | ![Passed](https://geps.dev/progress/$PASSED?max=$TOTAL&color=2eb85c) |" >> $GITHUB_STEP_SUMMARY
+          echo "| ✅ **Thành công (Passed)** | **$PASSED** | ![Passed](https://geps.dev/progress/$PASSED?max=$IF_MAX&color=2eb85c) |" >> $GITHUB_STEP_SUMMARY
           echo "| ❌ **Thất bại (Failed/Error)** | **$FAILED_TOTAL** | $RESULT_ICON \vert{}" >> $GITHUB_STEP_SUMMARY
           echo "| ⏸️ **Bỏ qua (Skipped)** | **$SKIPPED** | 🟡 \`Ignored/Disabled\` |" >> $GITHUB_STEP_SUMMARY
           echo "| ☕ **Môi trường (Environment)** | **JDK 21** | ![Java](https://img.shields.io/badge/Java-21-orange?style=flat-square&logo=openjdk) |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "---" >> $GITHUB_STEP_SUMMARY
-          echo "> 💡 *Báo cáo này được tự động tạo vào lúc \`$(date +'%Y-%m-%d %H:%M:%S HH')\`.*" >> $GITHUB_STEP_SUMMARY
+          echo "> 💡 *Báo cáo này được tự động tạo vào lúc \`$(date +'%Y-%m-%d %H:%M:%S')\`.*" >> $GITHUB_STEP_SUMMARY
 
       # --- BẢNG BÁO CÁO CHI TIẾT TỪ ACTION CHUYÊN DỤNG ---
       - name: Render Chi Tiết Từng Class Test
