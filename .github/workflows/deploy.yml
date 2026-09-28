@@ -24,3 +24,10 @@ jobs:
 
       - name: Chạy unit test và integration test
         run: ./mvnw clean test
+
+      # --- BỔ SUNG BƯỚC VẼ BẢNG THỐNG KÊ KẾT QUẢ TEST ---
+      - name: Báo cáo kết quả Test (Test Summary)
+        uses: test-summary/action@v2
+        with:
+          paths: "**/target/surefire-reports/TEST-*.xml"
+        if: always() # Luôn chạy để vẽ bảng kể cả khi có Test bị Fail
