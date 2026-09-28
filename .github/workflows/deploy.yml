@@ -25,9 +25,50 @@ jobs:
       - name: Chạy unit test và integration test
         run: ./mvnw clean test
 
-      # --- BỔ SUNG BƯỚC VẼ BẢNG THỐNG KÊ KẾT QUẢ TEST ---
-      - name: Báo cáo kết quả Test (Test Summary)
+      # --- BẢNG THỐNG KÊ MÀU MÈ TRỰC QUAN ---
+      - name: Tạo Bảng Thống Kê Chi Tiết
+        if: always()
+        run: |
+          # 1. Tính toán thời gian & số lượng test từ kết quả XML
+          TOTAL=$(grep -h "tests=" target/surefire-reports/TEST-*.xml 2>/dev/null | sed -E 's/.*tests="([0-9]+)".*/\1/' | awk '{s+=$1} END {print s+0}')
+          FAILURES=$(grep -h "failures=" target/surefire-reports/TEST-*.xml 2>/dev/null | sed -E 's/.*failures="([0-9]+)".*/\1/' | awk '{s+=$1} END {print s+0}')
+          ERRORS=$(grep -h "errors=" target/surefire-reports/TEST-*.xml 2>/dev/null | sed -E 's/.*errors="([0-9]+)".*/\1/' | awk '{s+=$1} END {print s+0}')
+          SKIPPED=$(grep -h "skipped=" target/surefire-reports/TEST-*.xml 2>/dev/null | sed -E 's/.*skipped="([0-9]+)".*/\1/' | awk '{s+=$1} END {print s+0}')
+          
+          FAILED_TOTAL=$((FAILURES + ERRORS))
+          PASSED=$((TOTAL - FAILED_TOTAL - SKIPPED))
+
+          # Determine status badge & color
+          IF [ $FAILED_TOTAL -eq 0 ]; THEN
+            STATUS_BADGE="![Passed](https://img.shields.io/badge/BUILD-SUCCESS-brightgreen?style=for-the-badge&logo=github)"
+            RESULT_ICON="🟢 **PASSED**"
+          ELSE
+            STATUS_BADGE="![Failed](https://img.shields.io/badge/BUILD-FAILED-red?style=for-the-badge&logo=github)"
+            RESULT_ICON="🔴 **FAILED**"
+          FI
+
+          # 2. Đẩy nội dung Markdown màu sắc vào Summary
+          echo "# 🚀 BÁO CÁO KẾT QUẢ CI BACKEND 🚀" >> $GITHUB_STEP_SUMMARY
+          echo "$STATUS_BADGE" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📊 Tổng Quan Kiểm Thử (Test Suite Summary)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Hạng mục | Chỉ số | Trạng thái / Tiến độ |" >> $GITHUB_STEP_SUMMARY
+          echo "| :--- | :---: | :--- |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🧪 **Tổng số Test Cases** | **$TOTAL** | 📦 \`Spring Boot Unit & Integration\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| ✅ **Thành công (Passed)** | **$PASSED** | ![Passed](https://geps.dev/progress/$PASSED?max=$TOTAL&color=2eb85c) |" >> $GITHUB_STEP_SUMMARY
+          echo "| ❌ **Thất bại (Failed/Error)** | **$FAILED_TOTAL** | $RESULT_ICON \vert{}" >> $GITHUB_STEP_SUMMARY
+          echo "| ⏸️ **Bỏ qua (Skipped)** | **$SKIPPED** | 🟡 \`Ignored/Disabled\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| ☕ **Môi trường (Environment)** | **JDK 21** | ![Java](https://img.shields.io/badge/Java-21-orange?style=flat-square&logo=openjdk) |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "> 💡 *Báo cáo này được tự động tạo vào lúc \`$(date +'%Y-%m-%d %H:%M:%S HH')\`.*" >> $GITHUB_STEP_SUMMARY
+
+      # --- BẢNG BÁO CÁO CHI TIẾT TỪ ACTION CHUYÊN DỤNG ---
+      - name: Render Chi Tiết Từng Class Test
         uses: test-summary/action@v2
         with:
           paths: "**/target/surefire-reports/TEST-*.xml"
-        if: always() # Luôn chạy để vẽ bảng kể cả khi có Test bị Fail
+        if: always()
