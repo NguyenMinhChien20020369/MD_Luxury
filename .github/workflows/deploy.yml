@@ -47,10 +47,10 @@ jobs:
           # 2. Xử lý logic câu lệnh if (chỉ viết chữ thường: if/then/else/fi)
           if [ $FAILED_TOTAL -eq 0 ] && [ $TOTAL -gt 0 ]; then
             STATUS_BADGE="![Passed](https://img.shields.io/badge/BUILD-SUCCESS-brightgreen?style=for-the-badge&logo=github)"
-            RESULT_ICON="🟢 **PASSED**"
+            RESULT_ICON="🟢 **PASSED**&#124; $FAILED_TOTAL/$TOTAL failed"
           else
             STATUS_BADGE="![Failed](https://img.shields.io/badge/BUILD-FAILED-red?style=for-the-badge&logo=github)"
-            RESULT_ICON="🔴 **FAILED**"
+            RESULT_ICON="🔴 **FAILED**&#124; $FAILED_TOTAL/$TOTAL failed"
           fi
           
           # 3. Xuất bảng Markdown vào GITHUB_STEP_SUMMARY
@@ -65,7 +65,7 @@ jobs:
           echo "| :--- | :---: | :--- |" >> $GITHUB_STEP_SUMMARY
           echo "| 🧪 **Tổng số Test Cases** | **$TOTAL** | 📦 \`Spring Boot Unit & Integration\` |" >> $GITHUB_STEP_SUMMARY
           echo "| ✅ **Thành công (Passed)** | **$PASSED** | ![Passed](https://geps.dev/progress/$PASSED?max=$IF_MAX&min=0&color=2eb85c) |" >> $GITHUB_STEP_SUMMARY
-          echo "| ❌ **Thất bại (Failed/Error)** | **$FAILED_TOTAL** | $RESULT_ICON \vert{} |" >> $GITHUB_STEP_SUMMARY
+          echo "| ❌ **Thất bại (Failed/Error)** | **$FAILED_TOTAL** | $RESULT_ICON |" >> $GITHUB_STEP_SUMMARY
           echo "| ⏸️ **Bỏ qua (Skipped)** | **$SKIPPED** | 🟡 \`Ignored/Disabled\` |" >> $GITHUB_STEP_SUMMARY
           echo "| ☕ **Môi trường (Environment)** | **JDK 21** | ![Java](https://img.shields.io/badge/Java-21-orange?style=flat-square&logo=openjdk) |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
