@@ -30,8 +30,8 @@ public class CustomerController {
     @GetMapping
     public ResponseEntity<Page<Customer>> listCustomers(
             @RequestParam(value = "search", required = false) String search,
-            @AuthenticationPrincipal CurrentUser currentUser,
             Pageable pageable) {
+        CurrentUser currentUser = currentUserProvider.get();
 
         Page<Customer> customers = customerService.list(currentUser, search, pageable);
         return ResponseEntity.ok(customers);
