@@ -45,12 +45,12 @@ jobs:
           fi
           
           # 2. Xử lý logic câu lệnh if (chỉ viết chữ thường: if/then/else/fi)
-          if [ $FAILED_TOTAL -eq 0 ] && [$TOTAL -gt 0 ]; then
-            STATUS_BADGE="![Failed](https://img.shields.io/badge/BUILD-FAILED-red?style=for-the-badge&logo=github)"
-            RESULT_ICON="🔴 **FAILED** $FAILED_TOTAL $TOTAL"
-          else
+          if [ $FAILED_TOTAL -eq 0 ] && [ $TOTAL -gt 0 ]; then
             STATUS_BADGE="![Passed](https://img.shields.io/badge/BUILD-SUCCESS-brightgreen?style=for-the-badge&logo=github)"
-            RESULT_ICON="🟢 **PASSED** $FAILED_TOTAL $TOTAL"
+            RESULT_ICON="🟢 **PASSED**"
+          else
+            STATUS_BADGE="![Failed](https://img.shields.io/badge/BUILD-FAILED-red?style=for-the-badge&logo=github)"
+            RESULT_ICON="🔴 **FAILED**"
           fi
           
           # 3. Xuất bảng Markdown vào GITHUB_STEP_SUMMARY
