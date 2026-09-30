@@ -1,5 +1,8 @@
 package com.java.md_luxury_2.service;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -7,44 +10,34 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
 public class ImageStorageService {
 
-    private final S3Client s3Client;
     private static final long MAX_SIZE = 5 * 1024 * 1024; // Giới hạn 5MB
-    private static final String BUCKET = "mdluxury-content-images";
 
-    public ImageStorageService(S3Client s3Client) {
-        this.s3Client = s3Client;
-    }
+    @Autowired
+    private Cloudinary cloudinary;
 
     public String upload(MultipartFile file) {
         // 1. Kiểm tra tính hợp lệ của file
         validate(file);
 
-        // 2. Tạo key/filename duy nhất
-        String key = "products/" + UUID.randomUUID() + "-" + file.getOriginalFilename();
-
-        // 3. Đẩy file lên S3
         try {
-            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
-                    .bucket(BUCKET)
-                    .key(key)
-                    .contentType(file.getContentType())
-                    .build();
-
-            s3Client.putObject(
-                    putObjectRequest,
-                    RequestBody.fromInputStream(file.getInputStream(), file.getSize())
+            // Upload file lên Cloudinary với cấu hình tự động nhận diện loại file (resource_type = auto)
+            Map<?, ?> uploadResult = cloudinary.uploader().upload(
+                    file.getBytes(),
+                    ObjectUtils.asMap("resource_type", "auto")
             );
-        } catch (IOException e) {
-            throw new RuntimeException("Tải ảnh lên S3 thất bại", e);
-        }
 
-        // 4. Trả về URL đầy đủ của ảnh
-        return "https://cdn.mdluxury.vn/" + key;
+            // Trả về đường dẫn URL trực tiếp của ảnh để bạn lưu vào Database
+            return uploadResult.get("secure_url").toString();
+
+        } catch (IOException e) {
+            throw new RuntimeException("Lỗi xảy ra trong quá trình upload file lên Cloudinary: " + e.getMessage());
+        }
     }
 
     private void validate(MultipartFile file) {
