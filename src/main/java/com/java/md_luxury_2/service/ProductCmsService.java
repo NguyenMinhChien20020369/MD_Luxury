@@ -91,7 +91,7 @@ public class ProductCmsService {
         str = pattern.matcher(str).replaceAll("");
 
         // 4. Thay thế chữ 'đ' và 'đ' hoa/thường (Normalizer không tự chuyển được chữ đ)
-        str = str.replace('đ', 'd');
+//        str = str.replace('đ', 'd');
 
         // 5. Áp dụng logic cũ của bạn: Xóa ký tự đặc biệt và thay khoảng trắng thành dấu gạch ngang
         return str.replaceAll("[^a-z0-9\\s-]", "")
