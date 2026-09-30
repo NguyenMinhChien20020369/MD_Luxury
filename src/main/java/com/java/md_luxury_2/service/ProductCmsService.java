@@ -10,9 +10,11 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.Normalizer;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 @Service
 public class ProductCmsService {
@@ -77,8 +79,22 @@ public class ProductCmsService {
 
     private String toSlug(String name) {
         if (name == null) return "";
-        return name.toLowerCase()
-                .replaceAll("[^a-z0-9\\s-]", "")
+
+        // 1. Chuyển chuỗi sang chữ thường
+        String str = name.toLowerCase();
+
+        // 2. Tách các ký tự dấu ra khỏi chữ gốc (Ví dụ: "đ" -> "d", "á" -> "a")
+        str = Normalizer.normalize(str, Normalizer.Form.NFD);
+
+        // 3. Xóa các tổ hợp dấu vừa tách (Unicode Diacritical Marks)
+        Pattern pattern = Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
+        str = pattern.matcher(str).replaceAll("");
+
+        // 4. Thay thế chữ 'đ' và 'đ' hoa/thường (Normalizer không tự chuyển được chữ đ)
+        str = str.replace('đ', 'd');
+
+        // 5. Áp dụng logic cũ của bạn: Xóa ký tự đặc biệt và thay khoảng trắng thành dấu gạch ngang
+        return str.replaceAll("[^a-z0-9\\s-]", "")
                 .trim()
                 .replaceAll("\\s+", "-");
     }

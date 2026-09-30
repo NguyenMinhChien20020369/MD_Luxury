@@ -3,6 +3,8 @@ package com.java.md_luxury_2.controller.cms;
 import com.java.md_luxury_2.dto.ProductAdminDTO;
 import com.java.md_luxury_2.dto.ProductCreateRequest;
 import com.java.md_luxury_2.dto.ProductUpdateRequest;
+import com.java.md_luxury_2.security.CurrentUser;
+import com.java.md_luxury_2.security.CurrentUserProvider;
 import com.java.md_luxury_2.service.ProductCmsService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -17,16 +19,18 @@ import java.util.UUID;
 public class ProductCmsController {
 
     private final ProductCmsService productCmsService;
+    private final CurrentUserProvider currentUserProvider;
 
-    public ProductCmsController(ProductCmsService productCmsService) {
+    public ProductCmsController(ProductCmsService productCmsService,
+                                CurrentUserProvider currentUserProvider) {
         this.productCmsService = productCmsService;
+        this.currentUserProvider = currentUserProvider;
     }
 
     @PostMapping
     public ResponseEntity<ProductAdminDTO> create(@Valid @RequestBody ProductCreateRequest request) {
-        // Tạm thời hardcode UUID của user tạo (sau Bài 12-13 sẽ lấy từ SecurityContext/JWT)
-        UUID currentUserId = UUID.fromString("00000000-0000-0000-0000-000000000001");
-        ProductAdminDTO response = productCmsService.create(request, currentUserId);
+        CurrentUser currentUser = currentUserProvider.get();
+        ProductAdminDTO response = productCmsService.create(request, currentUser.userId());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
