@@ -3,6 +3,7 @@ package com.java.md_luxury_2.controller.crm;
 import com.java.md_luxury_2.dto.ConvertLeadRequest;
 import com.java.md_luxury_2.dto.CustomerDTO;
 import com.java.md_luxury_2.security.CurrentUser;
+import com.java.md_luxury_2.security.CurrentUserProvider;
 import com.java.md_luxury_2.service.LeadConversionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,17 +22,20 @@ import java.util.UUID;
 public class LeadCrmController {
 
     private final LeadConversionService leadConversionService;
+    private final CurrentUserProvider currentUserProvider;
 
-    public LeadCrmController(LeadConversionService leadConversionService) {
+    public LeadCrmController(LeadConversionService leadConversionService, CurrentUserProvider currentUserProvider) {
         this.leadConversionService = leadConversionService;
+        this.currentUserProvider = currentUserProvider;
     }
 
     @PostMapping("/{id}/convert")
     @Operation(summary = "Chuyển đổi Lead sang Customer", description = "Chuyển đổi Lead sang Customer")
     public ResponseEntity<CustomerDTO> convertLead(
             @PathVariable("id") UUID leadId,
-            @Valid @RequestBody ConvertLeadRequest request,
-            @AuthenticationPrincipal CurrentUser currentUser) {
+            @Valid @RequestBody ConvertLeadRequest request) {
+
+        CurrentUser currentUser = currentUserProvider.get();
 
         CustomerDTO createdCustomer = leadConversionService.convert(
                 leadId,
