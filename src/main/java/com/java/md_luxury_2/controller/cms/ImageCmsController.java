@@ -1,6 +1,7 @@
 package com.java.md_luxury_2.controller.cms;
 
 import com.java.md_luxury_2.service.ImageStorageService;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -17,7 +18,7 @@ public class ImageCmsController {
         this.imageStorageService = imageStorageService;
     }
 
-    @PostMapping("/images/upload")
+    @PostMapping(path = "/images/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, String>> uploadImage(@RequestParam("file") MultipartFile file) {
         String imageUrl = imageStorageService.upload(file);
         return ResponseEntity.ok(Map.of(
