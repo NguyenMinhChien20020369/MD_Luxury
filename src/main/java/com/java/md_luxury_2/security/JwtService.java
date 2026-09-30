@@ -1,8 +1,8 @@
 package com.java.md_luxury_2.security;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SignatureException;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -34,6 +34,16 @@ public class JwtService {
         try {
             Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
             return true;
+        } catch (SignatureException e) {
+            throw new RuntimeException("Chữ ký Token không hợp lệ (Invalid JWT signature)");
+        } catch (MalformedJwtException e) {
+            throw new RuntimeException("Định dạng Token không hợp lệ (Invalid JWT token)");
+        } catch (ExpiredJwtException e) {
+            throw new RuntimeException("Token đã hết hạn sử dụng (Expired JWT token)");
+        } catch (UnsupportedJwtException e) {
+            throw new RuntimeException("Token không được hỗ trợ (Unsupported JWT token)");
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Chuỗi Token trống hoặc rỗng (JWT claims string is empty)");
         } catch (Exception e) {
             return false;
         }
