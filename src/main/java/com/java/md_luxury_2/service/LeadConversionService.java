@@ -19,13 +19,16 @@ public class LeadConversionService {
     private final LeadRepository leadRepository;
     private final CustomerRepository customerRepository;
     private final AuditLogService auditLogService;
+    private final CustomerService customerService;
 
     public LeadConversionService(LeadRepository leadRepository,
                                  CustomerRepository customerRepository,
-                                 AuditLogService auditLogService) {
+                                 AuditLogService auditLogService,
+                                 CustomerService customerService) {
         this.leadRepository = leadRepository;
         this.customerRepository = customerRepository;
         this.auditLogService = auditLogService;
+        this.customerService = customerService;
     }
 
     @Transactional // Đảm bảo cả hai bước đổi trạng thái Lead và tạo Customer đều thành công hoặc thất bại cùng nhau
@@ -37,13 +40,9 @@ public class LeadConversionService {
             throw new IllegalStateException("Lead này đã được chuyển đổi trước đó");
         }
 
-        Customer customer = new Customer();
-        customer.setFullName(lead.getFullName());
+        Customer customer = customerService.createCustomer(lead.getFullName(),
+                lead.getPhone(), "");
         customer.setOwnerId(assignToUserId);
-        customer.setTier("Member");
-        customer.setCreatedAt(LocalDateTime.now());
-        // Tạm thời lưu thô SĐT, bài 19 sẽ xử lý mã hóa phoneEncrypted và tính phoneHash
-        customer.setPhoneEncrypted(lead.getPhone());
 
         Customer saved = customerRepository.save(customer);
 
